@@ -1,0 +1,35 @@
+CXX=g++
+
+BIN_PATH=/usr/local/bin
+
+INCLUDE_PATH=/usr/local/include
+
+#LIB_PATH=/usr/lib64
+LOCAL_LIB_PATH=/usr/local/lib
+
+CFLAGS=-W -I$(INCLUDE_PATH) -I$(BIN_PATH) \
+		-Icommon -c -g -std=c++0x 
+#LFLAGS=-L$(LOCAL_LIB_PATH) \
+#		-ldl -lm -g -lpthread -lcurl -Wl, -E
+LFLAGS=-g
+
+COMMON_O=Common/Platform.o
+UTIL_O=Util/NetUtil.o Util/Log.o Util/Misc.o Util/Config.o Util/cfg_reader.o
+EVENT_O=Event/EpollModule.o Event/EventModule.o Event/EventLoop.o Event/Channel.o 
+USERDEF_O=UserDef/EchoServer.o UserDef/EchoSession.o
+OTHERS_O=$(COMMON_O) $(UTIL_O) $(EVENT_O) $(USERDEF_O)
+
+BaseServer_O=Core/StMain.o Core/Buffer.o Core/Socket.o Core/TcpClient.o Core/Listener.o Core/TcpConnection.o \
+			Core/TcpServer.o Core/TcpSession.o
+
+ALL_O=$(OTHERS_O) $(BaseServer_O)
+BIN_HOME=./bin
+APP=$(BIN_HOME)/EchoServer.out
+
+%.o:%.cpp
+	$(CXX) $(CFLAGS) $< -o $@
+	
+all:$(ALL_O)
+	$(CXX) $(LFLAGS) $(OTHERS_O) $(BaseServer_O)       -o $(BIN_HOME)/EchoServer.out
+clean:
+	-rm -f $(ALL_O) $(APP)
