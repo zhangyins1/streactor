@@ -39,5 +39,5 @@
 
 #### 使用说明
 1. bin/cfg.ini 是配置端口 里面的listen_port即是程序中监听的端口
-2. bin目录放的是运行所需要的文件 包括编译后生成的可执行文件  SliServer.out
+2. bin目录放的是运行所需要的文件 包括编译后生成的可执行文件  EchoServer.out
 
