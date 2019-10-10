@@ -4,14 +4,13 @@
 基于epoll实现的单线程网络服务端框架
 
 #### 软件架构
-软件架构说明
+Core   - 存放net相关的文件 TcpServer TcpConnection Listener TcpSession等
+Event  - 存放网络事件相关文件 EventModule EventLoop Channel 等
+UserDef - 存放业务层文件 新建的业务层服务 EchoServer， 继承自 TcpSession的 EchoSession等
 
 
 #### 安装教程
 
-1. xxxx
-2. xxxx
-3. xxxx
 
 #### 使用说明
 
