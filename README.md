@@ -5,22 +5,25 @@
 
 #### 软件架构
 
-
 - Core   - 存放net相关的文件 TcpServer TcpConnection Listener TcpSession等
 - Event  - 存放网络事件相关文件 EventModule EventLoop Channel 等
 - UserDef - 存放业务层文件 新建的业务层服务 EchoServer， 继承自 TcpSession的 EchoSession等
 
-- 网络事件通知模块：
--     EventLoop
--       - EpollModule
--       - Channel
-- 应用层：
--     TcpServer:
--       - TcpConnection ： tcp连接类
--         - TcpSession ：业务层Session需要集成的类
--       - Listener ：监听类
--       - EventLoop : 所属事件循环
-- 
+
+```
+ 网络事件通知模块：
+     EventLoop
+       - EpollModule
+       - Channel
+ 应用层：
+     TcpServer:
+       - TcpConnection ： tcp连接类
+         - TcpSession ：业务层Session需要集成的类
+       - Listener ：监听类
+       - EventLoop : 所属事件循环
+```
+
+
 
 
 #### 安装教程
@@ -35,6 +38,6 @@
 
 
 #### 使用说明
-bin目录下的 cfg.ini 里面有对端口的配置，将port字段改为想要本服务监听的端口，
-然后在客户端用tcp连接该端口即可。
+1. bin/cfg.ini 是配置端口 里面的listen_port即是程序中监听的端口
+2. bin目录放的是运行所需要的文件 包括编译后生成的可执行文件  SliServer.out
 
