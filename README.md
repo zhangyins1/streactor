@@ -1,7 +1,8 @@
 # StServerFrame
 
 #### 介绍
-基于epoll实现的单线程网络服务端框架
+基于epoll和EventLoop实现的单线程网络服务端框架
+参考借鉴了开源项目 flamingo
 
 #### 软件架构
 
