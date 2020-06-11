@@ -21,8 +21,4 @@ private:
 	CCfgReader					*m_cfg;
 };
 
-
-
-
-
 #endif  // !__CONFIG_H_H__
