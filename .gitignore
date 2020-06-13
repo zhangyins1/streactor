@@ -1,0 +1,6 @@
+# VS Projects files
+Debug/
+*.user
+*.sdf
+*.suo
+*.opensdf

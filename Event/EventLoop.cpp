@@ -31,12 +31,27 @@ void CEventLoop::loop()
 
 		if (runtimeCallBack_)
 			runtimeCallBack_(this);
+
+		doPendingFunctors();
 	}
 }
 
 void CEventLoop::stop()
 {
 	m_stoped = true; 
+}
+
+void CEventLoop::doPendingFunctors()
+{
+	if (m_pendingFunctors.size() > 0) {
+		std::vector<PendingFunctor> functors;
+		functors.swap(m_pendingFunctors);
+
+		for (size_t i = 0; i < functors.size(); ++i)
+		{
+			functors[i]();
+		}
+	}
 }
 
 bool CEventLoop::updateChannel(CChannel * channel)
@@ -47,4 +62,9 @@ bool CEventLoop::updateChannel(CChannel * channel)
 void CEventLoop::removeChannel(CChannel * channel)
 {
 	m_eventModule->RemoveChannel(channel);
+}
+
+bool CEventLoop::hasChannel(CChannel * channel)
+{
+	return m_eventModule->HasChannel(channel);
 }

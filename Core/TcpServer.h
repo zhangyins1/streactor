@@ -14,35 +14,36 @@ namespace net
 	class CTcpServer
 	{
 	public:
-		typedef std::function<void(CTcpConnection *)> ConnectionCallBack;
-		typedef std::function<void()> DailyResCleanCallBack;
+		using DailyResCleanCallBack = std::function<void()>;
 		CTcpServer(CEventLoop *loop, const std::string& ip, st_port_t port);
 		~CTcpServer();
 
 	public:
 		void					start();
 		void					stop();
-		void					closeConnection(CTcpConnection *c);
+		void					closeConnection(const TcpConnectionPtr_t& c);
 		void					OnNewConnection(int fd); 
-		void					OnConnectionClose(CTcpConnection *c);
-		bool					AddConnection(CTcpConnection *c);
-		void					RemoveConnetion(CTcpConnection *c);
-		void					BindSession(CTcpSession *session, CTcpConnection *c);
+		void					OnConnectionClose(const TcpConnectionPtr_t& c);
+		bool					AddConnection(const TcpConnectionPtr_t& c);
+		void					RemoveConnetion(const TcpConnectionPtr_t& c);
 		void					HandleDailyResCleanUp(CEventLoop *loop); // 处理需要关闭的连接等
 	public:
 		void					setConnectionCallBack(const ConnectionCallBack& cb) { connectionCallBack_ = cb; }
+		void					setMessageCallBack(const MessageCallBack& cb) { messageCallBack_ = cb; }
+		void					setWriteCompleteCallBack(const WriteCompleteCallBack& cb) { writeCompleteCallBack_ = cb; }
 		void					setDailyCleanUpCallBack(const DailyResCleanCallBack& cb) { dailyResCleanUpCallBack_ = cb; }
 	private:
 		ConnectionCallBack		connectionCallBack_;
+		MessageCallBack			messageCallBack_;
+		WriteCompleteCallBack	writeCompleteCallBack_;
+		CloseCallBack			closeCallBack_;
 		DailyResCleanCallBack	dailyResCleanUpCallBack_;
 	private:
-		typedef std::map<int, CTcpConnection*> ConnectionMap;
-		typedef std::vector<CTcpConnection *> ConnectionList;
+		typedef std::map<int, TcpConnectionPtr_t> ConnectionMap;
 		ConnectionMap			m_connections;
-		ConnectionList			m_needDelConnections;
 		CEventLoop				*m_loop;
 		bool					m_stoped;
-		CListener				*m_listener;
+		std::shared_ptr<CListener> m_listener;
 	};
 }
 

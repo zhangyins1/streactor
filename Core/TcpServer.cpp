@@ -31,17 +31,20 @@ void CTcpServer::stop()
 		m_loop->stop();
 }
 
-void CTcpServer::closeConnection(CTcpConnection *c)
+void CTcpServer::closeConnection(const TcpConnectionPtr_t& c)
 {
 	c->handleClose();
 }
 
 void CTcpServer::OnNewConnection(int fd)
 {
-	CTcpConnection *conn = new CTcpConnection(m_loop, fd);
+	TcpConnectionPtr_t conn(new CTcpConnection(m_loop, fd));
 	if (!AddConnection(conn)) {
 		return;
 	}
+	conn->setConnectionCallBack(connectionCallBack_);
+	conn->setMessageCallBack(messageCallBack_);
+	conn->setWriteCompleteCallBack(writeCompleteCallBack_);
 	conn->setCloseCallBack(std::bind(&CTcpServer::OnConnectionClose, this, std::placeholders::_1));
 
 	CSocket s(fd);
@@ -52,14 +55,16 @@ void CTcpServer::OnNewConnection(int fd)
 		connectionCallBack_(conn);
 }
 
-void CTcpServer::OnConnectionClose(CTcpConnection *c)
+void CTcpServer::OnConnectionClose(const TcpConnectionPtr_t& c)
 {
 	RemoveConnetion(c);
-	if (std::find(m_needDelConnections.begin(), m_needDelConnections.end(), c) == m_needDelConnections.end())
-		m_needDelConnections.push_back(c);
+	if (closeCallBack_)
+		closeCallBack_(c);
+
+	m_loop->addPendingFunctor(std::bind(&CTcpConnection::connectDestroyed, c));
 }
 
-bool CTcpServer::AddConnection(CTcpConnection *c)
+bool CTcpServer::AddConnection(const TcpConnectionPtr_t& c)
 {
 	int fd = c->fd();
 	auto it = m_connections.find(fd);
@@ -69,42 +74,13 @@ bool CTcpServer::AddConnection(CTcpConnection *c)
 	return true;
 }
 
-void CTcpServer::RemoveConnetion(CTcpConnection *c)
+void CTcpServer::RemoveConnetion(const TcpConnectionPtr_t& c)
 {
-	int fd = c->fd();
-	auto it = m_connections.find(fd);
-	if (it != m_connections.end())
-	{
-		if (it->second == c)
-			m_connections.erase(it);
-	}
-}
-
-void CTcpServer::BindSession(CTcpSession *session, CTcpConnection *c)
-{
-	c->setMessageCallBack(std::bind(&CTcpSession::OnRead, session, std::placeholders::_1, std::placeholders::_2));
-	c->setWriteCompleteCallBack(std::bind(&CTcpSession::OnWriteComplete, session, std::placeholders::_1));
-	c->addSession(session);
+	m_connections.erase(c->fd());
 }
 
 void CTcpServer::HandleDailyResCleanUp(CEventLoop *loop)
 {
 	if (dailyResCleanUpCallBack_)
 		dailyResCleanUpCallBack_();
-
-	size_t len = m_needDelConnections.size();
-	if (len) {
-		for (size_t i = 0; i < len; ++i)
-		{
-			CTcpConnection *c = m_needDelConnections.back();
-			m_needDelConnections.pop_back();
-			SAFE_DEL(c);
-		}
-	}
-	if (len > 0) {
-#if IS_DEBUG
-	_LOG_INFO("CTcpServer::HandleDailyResCleanUp", "clean %d conns.", len);
-#endif
-	}
-
 }

@@ -2,14 +2,21 @@
 #define __CALL_BACK_TYPE_DEF_H_H__
 
 #include <functional>
+#include <memory>
 
 namespace net
 {
 	class Buffer;
 	class CTcpConnection;
-	typedef	std::function<void(CTcpConnection  *conn, net::Buffer *inbuf)> MessageCallBack;
-	typedef std::function<void(CTcpConnection  *conn)> WriteCompleteCallBack;
-	typedef std::function<void(CTcpConnection  *conn)> CloseCallBack;
+
+	using TcpConnectionPtr_t = std::shared_ptr<CTcpConnection>;
+
+	using ConnectionCallBack = std::function<void(const TcpConnectionPtr_t& conn)>;
+	using MessageCallBack = std::function<void(const TcpConnectionPtr_t& conn, Buffer *inbuf)>;
+	using WriteCompleteCallBack = std::function<void(const TcpConnectionPtr_t& conn)>;
+	using CloseCallBack = std::function<void(const TcpConnectionPtr_t& conn)>;
+	using ReadEventCallBack = std::function<void(const TcpConnectionPtr_t& conn)>;
+	using WriteEventCallBack = std::function<void(const TcpConnectionPtr_t& conn)>;
 }
 
 #endif // !__CALL_BACK_TYPE_DEF_H_H__

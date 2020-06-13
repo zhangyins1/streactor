@@ -14,7 +14,8 @@ CChannel::CChannel(CEventLoop *loop, int fd) : m_events(0), m_revents(0), m_fd(f
 
 CChannel::~CChannel()
 {
-	this->removeAllEvent();
+	if (m_loop->hasChannel(this))
+		remove();
 }
 
 void CChannel::handleEvents()
@@ -78,7 +79,13 @@ bool CChannel::hasWriteEvent()
 	return (m_events & kWriteEvent) != 0;
 }
 
-void CChannel::removeAllEvent()
+void CChannel::disableAllEvent()
+{
+	m_events = kNoneEvent;
+	update();
+}
+
+void CChannel::remove()
 {
 	m_loop->removeChannel(this);
 }

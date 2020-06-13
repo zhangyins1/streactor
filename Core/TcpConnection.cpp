@@ -1,6 +1,7 @@
 #include "TcpConnection.h"
 #include "../Event/Channel.h"
 #include "TcpSession.h"
+#include "../Util/Log.h"
 using namespace net;
 
 CTcpConnection::CTcpConnection(CEventLoop *loop, int fd) : m_fd(fd), m_channel(new CChannel(loop, fd)), m_state(StateE::kConnecting)
@@ -13,33 +14,39 @@ CTcpConnection::CTcpConnection(CEventLoop *loop, int fd) : m_fd(fd), m_channel(n
 
 CTcpConnection::~CTcpConnection()
 {
-	if (m_outBuffer.readableBytes() > 0 && m_channel->hasWriteEvent())
-		handleWrite();
-
-	for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
-	{
-		CTcpSession *session = it->second;
-		if (session)
-			session->OnConnectDestroyed();
-	}
-
-	delete m_channel;
-	m_channel = nullptr;
+	_LOG_INFO("CTcpConnection::~CTcpConnection", "fd: %d", m_fd.fd());
 	m_fd.Close();
-	setState(StateE::kDisconnected);
 }
 
 void CTcpConnection::connectEstablished()
 {
-	m_channel->enableReading();
 	setState(StateE::kConnected);
+	m_channel->enableReading();
 }
 
-void CTcpConnection::send(const char* buf, int len)
+void CTcpConnection::connectDestroyed()
+{
+	if (m_state == StateE::kConnected) {
+		m_channel->disableAllEvent();
+		setState(StateE::kDisconnected);
+
+		connectionCallBack_(shared_from_this());
+	}
+	setState(StateE::kDisconnected);
+	m_channel->remove();
+}
+
+int CTcpConnection::recv(char* buf, int size)
+{
+	return sockets::read(m_fd.fd(), buf, size);
+}
+
+int CTcpConnection::send(const char* buf, int len)
 {
 	m_outBuffer.append(buf, len);
 	if (!m_channel->hasWriteEvent())
 		m_channel->enableWriting();
+	return len;
 }
 
 void CTcpConnection::handleRead()
@@ -49,7 +56,7 @@ void CTcpConnection::handleRead()
 	
 	if (n > 0) {
 		if (messageCallBack_)
-			messageCallBack_(this, &m_inBuffer);
+			messageCallBack_(shared_from_this(), &m_inBuffer);
 	}
 	else if (n == 0) {
 		handleClose();
@@ -69,7 +76,7 @@ void CTcpConnection::handleWrite()
 			if (m_outBuffer.readableBytes() == 0) {
 				m_channel->disableWriting();
 				if (writeCompleteCallBack_)
-					writeCompleteCallBack_(this);
+					writeCompleteCallBack_(shared_from_this());
 			}
 		}
 		else {
@@ -80,9 +87,15 @@ void CTcpConnection::handleWrite()
 
 void CTcpConnection::handleClose()
 {
-	if (closeCallBack_)
-		closeCallBack_(this);
 	setState(StateE::kDisconnecting);
+	TcpConnectionPtr_t guardThis(shared_from_this());
+	connectionCallBack_(guardThis);
+	if (closeCallBack_)
+		closeCallBack_(guardThis);
+
+	if (m_outBuffer.readableBytes() > 0) {
+		handleWrite();
+	}
 }
 
 void CTcpConnection::handleError()
@@ -95,12 +108,4 @@ int CTcpConnection::fd()
 	if (m_fd.hasInit())
 		return m_fd.fd();
 	return INVALID_FD;
-}
-
-void CTcpConnection::addSession(CTcpSession *session)
-{
-	st_sessionid_t id = session->id();
-	if (m_sessions.find(id) != m_sessions.end())
-		return;
-	m_sessions[id] = session;
 }

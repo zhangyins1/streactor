@@ -46,8 +46,9 @@ int CEpollModule::Del(CChannel *channel)
 	{
 		update(XEPOLL_CTL_DEL, channel);
 		m_channels.erase(it);
-		channel->setState(kNew);
+		channel->setState(kDeleted);
 	}
+	_LOG_INFO("CEpollModule::Del", "fd: %d, m_fds.size: %d", fd, m_channels.size());
 	return ST_OK;
 }
 
@@ -73,6 +74,8 @@ int CEpollModule::UpdateChannel(CChannel *channel)
 		return Add(channel);
 	}
 	else if (state == kAdded) {
+		if (channel->isNoneEvent())
+			return Del(channel);
 		return Modify(channel);
 	}
 	else {
@@ -87,7 +90,7 @@ void CEpollModule::RemoveChannel(CChannel *channel)
 
 int CEpollModule::Init()
 {
-	m_efd = epoll_create(EPOLL_CLOEXEC);
+	m_efd = epoll_create1(EPOLL_CLOEXEC);
 	if (m_efd < 0)
 	{
 		LOG_ERROR("error on epoll_create().", errno);

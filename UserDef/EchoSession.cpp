@@ -2,17 +2,23 @@
 #include "EchoSession.h"
 #include "../Util/Log.h"
 
-CEchoSession::CEchoSession(CTcpConnection *conn) : CTcpSession(conn)
+CEchoSession::CEchoSession(const TcpConnectionWeakPtr_t& c) : CTcpSession(c)
 {
 
 }
 
 CEchoSession::~CEchoSession()
 {
-
+#if IS_DEBUG
+	auto c = getConnectionPtr();
+	int fd = -2;
+	if (c)
+		fd = c->fd();
+	_LOG_INFO("CEchoSession::~CEchoSession", "fd: %d", fd);
+#endif
 }
 
-void CEchoSession::OnRead(CTcpConnection *conn, net::Buffer *inbuf)
+void CEchoSession::OnRead(const TcpConnectionPtr_t& c, Buffer *inbuf)
 {
 	if (inbuf->readableBytes() > 0) {
 		std::string msg(inbuf->peek(), inbuf->readableBytes());
@@ -31,6 +37,6 @@ void CEchoSession::OnRead(CTcpConnection *conn, net::Buffer *inbuf)
 			msg = std::string("s: ") + msg + std::string("\n");
 		Send(msg.c_str(), msg.size());
 		if (needClose)
-			conn->handleClose();
+			c->handleClose();
 	}
 }

@@ -31,48 +31,21 @@ void CEchoServer::Stop()
 	m_server->stop();
 }
 
-void CEchoServer::OnNewConnection(net::CTcpConnection *c)
+void CEchoServer::OnNewConnection(const TcpConnectionPtr_t& c)
 {
-	CEchoSession * session = new CEchoSession(c);
-	session->setSessionCloseCallBack(std::bind(&CEchoServer::OnConnectionClose, this, std::placeholders::_1));
-	this->addSession(session);
-	m_server->BindSession(session, c);
-}
-
-void CEchoServer::OnConnectionClose(CTcpSession *session)
-{
-	delSession((CEchoSession*)session);
-	if (!is_int_in_vec((CEchoSession*)session, m_needDelSessions))
-		m_needDelSessions.push_back((CEchoSession*)session);
-}
-
-void CEchoServer::HandleDailyResCleanUp()
-{
-	size_t len = m_needDelSessions.size();
-	if (len) {
-		for (size_t i = 0; i < len; ++i)
-		{
-			CEchoSession *s = m_needDelSessions.back();
-			m_needDelSessions.pop_back();
-			SAFE_DEL(s);
-		}
+	if (c->isConnected()) {
+		std::shared_ptr<CEchoSession> pSession(new CEchoSession(c));
+		this->addSession(c, pSession);
+		_LOG_INFO("CEchoServer::OnNewConnection", "sessions.size: %d", m_sessions.size());
+		c->setMessageCallBack(std::bind(&CEchoSession::OnRead, pSession.get(), std::placeholders::_1, std::placeholders::_2));
 	}
-	if (len > 0) {
-#if IS_DEBUG
-	_LOG_INFO("CEchoServer::HandleDailyResCleanUp", "clean %d sessions.", len);
-#endif
+	else {
+		OnConnectionClose(c);
 	}
 }
 
-void CEchoServer::addSession(CEchoSession *s)
+void CEchoServer::OnConnectionClose(const TcpConnectionPtr_t& c)
 {
-	if (!is_int_in_vec(s, m_sessions))
-		m_sessions.push_back(s);
-}
-
-void CEchoServer::delSession(CEchoSession *s)
-{
-	auto it = std::find(m_sessions.begin(), m_sessions.end(), s);
-	if (it != m_sessions.end())
-		m_sessions.erase(it);
+	delSession(c);
+	_LOG_INFO("CEchoServer::OnConnectionClose", "sessions.size: %d", m_sessions.size());
 }

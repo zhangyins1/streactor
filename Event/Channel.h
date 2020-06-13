@@ -26,13 +26,15 @@ public:
 	int					revents(void) { return m_revents; }
 	int					fd(void) { return m_fd; }
 	int					state(void) { return m_state; }
+	bool				isNoneEvent(void) { return m_events == kNoneEvent; }
 public:
 	bool				enableReading();
 	bool				disableReading();
 	bool 				enableWriting();
 	bool				disableWriting();
 	bool				hasWriteEvent();
-	void				removeAllEvent();
+	void				disableAllEvent();
+	void				remove();
 private:
 	EventCallback		readCallBack_;
 	EventCallback		writeCallBack_;
