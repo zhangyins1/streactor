@@ -1,10 +1,13 @@
 #include "EventLoop.h"
 #include "EventModule.h"
+#include "EpollModule.h"
 #include "Channel.h"
 #include "../Util/TypeDef.h"
+
 CEventLoop::CEventLoop() : m_stoped(true)
 {
-
+	m_eventModule.reset(new CEpollModule(this));
+	m_eventModule->Init();
 }
 
 CEventLoop::~CEventLoop()

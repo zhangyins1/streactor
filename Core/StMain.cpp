@@ -41,11 +41,6 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	
-	CEventModule *emd = nullptr;
-	emd = new CEpollModule(&g_mainLoop);
-	emd->Init();
-	g_mainLoop.setEventModule(emd);
-
 	CEchoServer *server = new CEchoServer();
 	server->Init(&g_mainLoop, "addr_any", g_config->m_listenPort);
 	server->Start();

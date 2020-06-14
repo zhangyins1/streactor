@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <functional>
+#include <memory>
 
 class CEventLoop;
 class CChannel;
@@ -12,11 +13,11 @@ class CEventLoop
 public:
 	using PendingFunctor = std::function<void()>;
 	using ChannelVec = std::vector<CChannel *>;
+	using EventLoopRuntimeCallBack = std::function<void(CEventLoop *)>;
 public:
 	CEventLoop();
 	~CEventLoop();
 public:
-	typedef std::function<void(CEventLoop *)> EventLoopRuntimeCallBack;
 	bool					updateChannel(CChannel * channel);
 	void					removeChannel(CChannel * channel);
 	bool					hasChannel(CChannel * channel);
@@ -24,7 +25,6 @@ public:
 	void					stop();
 	void					doPendingFunctors();
 public:
-	void					setEventModule(CEventModule *eventModule) { m_eventModule = eventModule; }
 	void					setRuntimeCallBack(const EventLoopRuntimeCallBack& cb) { runtimeCallBack_ = cb; }
 	void					addPendingFunctor(const PendingFunctor& functor) {
 		m_pendingFunctors.push_back(functor);
@@ -32,7 +32,7 @@ public:
 private:
 	EventLoopRuntimeCallBack runtimeCallBack_;
 private:
-	CEventModule			*m_eventModule;
+	std::shared_ptr<CEventModule> m_eventModule;
 	ChannelVec				m_activeChannels;
 	CChannel				*m_curActiveChannel;
 	bool					m_stoped;
